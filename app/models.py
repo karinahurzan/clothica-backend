@@ -7,11 +7,13 @@ from sqlalchemy import (
     JSON,
     Boolean,
     DateTime,
+    func,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import expression
 from .database import Base
 import datetime
+import uuid
 
 
 class User(Base):
@@ -61,7 +63,7 @@ class Feedback(Base):
 
 class Category(Base):
     __tablename__ = "categories"
-    id = Column(String, primary_key=True)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String)
 
 
@@ -80,3 +82,11 @@ class Subscription(Base):
     __tablename__ = "subscriptions"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True)
+
+
+class BlacklistedToken(Base):
+    __tablename__ = "blacklisted_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True, index=True)
+    blacklisted_on = Column(DateTime(timezone=True), server_default=func.now())

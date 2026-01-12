@@ -38,6 +38,13 @@ class GoodOut(GoodBase):
         from_attributes = True
 
 
+class GoodsPagination(BaseModel):
+    items: List[GoodOut]
+    total_count: int
+    has_more: bool
+    max_available_price: int
+
+
 class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None

@@ -1,3 +1,4 @@
+# security.py
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Session
 from . import database, models
 import os
 from dotenv import load_dotenv
-from .models import User
+from .models import User, BlacklistedToken
 
 load_dotenv()
 
@@ -38,6 +39,15 @@ def create_access_token(data: dict):
 def get_current_user(
     token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)
 ):
+    is_blacklisted = (
+        db.query(BlacklistedToken).filter(BlacklistedToken.token == token).first()
+    )
+    if is_blacklisted:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User logged out (Token revoked)",
+        )
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")

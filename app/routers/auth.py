@@ -1,7 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from .. import schemas, models, database
-from ..security import hash_password, verify_password, create_access_token
+from ..security import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    oauth2_scheme,
+    get_current_user,
+)
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
@@ -43,7 +49,12 @@ def sign_in(data: schemas.UserLogin, db: Session = Depends(database.get_db)):
         )
 
     token = create_access_token({"sub": str(user.id)})
-    return {"token": token, "user_email": user.email}
+    return {
+        "token": token,
+        "user_email": user.email,
+        "id": user.id,
+        "is_admin": user.is_admin,
+    }
 
 
 @router.post("/google-login")
@@ -67,3 +78,23 @@ def google_auth(token_data: schemas.TokenData, db: Session = Depends(database.ge
         return {"token": api_token}
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid Google Token")
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+def logout(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    existing_token = (
+        db.query(models.BlacklistedToken)
+        .filter(models.BlacklistedToken.token == token)
+        .first()
+    )
+
+    if not existing_token:
+        blacklisted_token = models.BlacklistedToken(token=token)
+        db.add(blacklisted_token)
+        db.commit()
+
+    return {"message": "Successfully logged out"}

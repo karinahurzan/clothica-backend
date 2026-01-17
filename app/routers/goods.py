@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from typing import List, Optional
 from .. import models, schemas, database
@@ -8,6 +8,13 @@ router = APIRouter()
 
 
 def format_good(good):
+    feedbacks_count = len(good.feedbacks)
+    feedbacks_average = (
+        sum(fb.rate for fb in good.feedbacks) / feedbacks_count
+        if feedbacks_count > 0
+        else 0
+    )
+
     return {
         "id": good.id,
         "name": good.name,
@@ -19,6 +26,8 @@ def format_good(good):
         "size": good.size,
         "characteristics": good.characteristics,
         "price": {"value": good.price_value, "currency": good.price_currency},
+        "feedbacks_count": feedbacks_count,
+        "feedbacks_average": feedbacks_average,
     }
 
 
@@ -46,15 +55,17 @@ def get_goods(
         query.with_entities(func.max(models.Good.price_value)).scalar() or 1000
     )
 
-    print(max_price_in_db)
-
     if min_price is not None:
         query = query.filter(models.Good.price_value >= min_price)
     if max_price is not None:
         query = query.filter(models.Good.price_value <= max_price)
 
     total_count = query.count()
-    goods = query.offset(skip).limit(limit).all()
+    goods = (
+        query.offset(skip).limit(limit).options(joinedload(models.Good.feedbacks)).all()
+    )
+
+    print(goods)
 
     return {
         "items": [format_good(g) for g in goods],

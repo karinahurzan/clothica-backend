@@ -58,7 +58,7 @@ def get_current_user(
     except JWTError:
         raise HTTPException(status_code=401, detail="Could not validate credentials")
 
-    user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+    user = db.query(models.User).filter(models.User.id == str(user_id)).first()
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user

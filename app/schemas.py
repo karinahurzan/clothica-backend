@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import List, Optional
 from datetime import datetime
+from uuid import UUID
 
 
 class Price(BaseModel):
@@ -29,6 +30,8 @@ class GoodBase(BaseModel):
     prevDescription: str
     gender: str
     characteristics: List[str]
+    feedbacks_count: int
+    feedbacks_average: float
 
 
 class GoodOut(GoodBase):
@@ -65,7 +68,7 @@ class UserUpdate(BaseModel):
 
 
 class UserOut(UserBase):
-    id: int
+    id: UUID
     is_admin: bool
 
     class Config:
@@ -88,7 +91,7 @@ class FeedbackCreate(FeedbackBase):
 
 
 class FeedbackOut(FeedbackBase):
-    id: int
+    id: UUID
     date: datetime
 
     class Config:
@@ -108,7 +111,7 @@ class OrderCreate(BaseModel):
 
 
 class OrderOut(OrderCreate):
-    id: int
+    id: UUID
     status: str
     created_at: datetime
 

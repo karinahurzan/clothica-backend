@@ -84,6 +84,6 @@ class Subscription(Base):
 class BlacklistedToken(Base):
     __tablename__ = "blacklisted_tokens"
 
-    id = Column(String, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     token = Column(String, unique=True, index=True)
     blacklisted_on = Column(DateTime(timezone=True), server_default=func.now())

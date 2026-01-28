@@ -6,10 +6,12 @@ from ..security import (
     verify_password,
     create_access_token,
     oauth2_scheme,
-    get_current_user,
+    create_refresh_token,
 )
+import os
 from google.oauth2 import id_token
 from google.auth.transport import requests
+from jose import JWTError, jwt
 
 router = APIRouter()
 
@@ -84,7 +86,6 @@ def google_auth(token_data: schemas.TokenData, db: Session = Depends(database.ge
 def logout(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(database.get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
     existing_token = (
         db.query(models.BlacklistedToken)
@@ -98,3 +99,25 @@ def logout(
         db.commit()
 
     return {"message": "Successfully logged out"}
+
+
+@router.post("/refresh")
+def refresh_token(
+    payload: schemas.TokenRefreshRequest, db: Session = Depends(database.get_db)
+):
+
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    ALGORITHM = os.getenv("ALGORITHM", "HS256")
+
+    try:
+        data = jwt.decode(payload.refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        if data.get("type") != "refresh":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+
+        user_id = data.get("sub")
+        new_access = create_access_token({"sub": user_id})
+        new_refresh = create_refresh_token({"sub": user_id})
+
+        return {"token": new_access, "refresh_token": new_refresh}
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Refresh token expired or invalid")

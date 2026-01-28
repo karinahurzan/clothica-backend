@@ -121,3 +121,7 @@ class OrderOut(OrderCreate):
 
 class SubscriptionCreate(BaseModel):
     email: EmailStr
+
+
+class TokenRefreshRequest(BaseModel):
+    refresh_token: str

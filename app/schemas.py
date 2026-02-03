@@ -102,12 +102,12 @@ class OrderItem(BaseModel):
     product_id: str
     quantity: int
     price: float
+    size: str | None = None
 
 
 class OrderCreate(BaseModel):
     items: List[OrderItem]
     total_price: float
-    user_id: Optional[int] = None
 
 
 class OrderOut(OrderCreate):

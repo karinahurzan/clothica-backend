@@ -9,8 +9,12 @@ router = APIRouter()
 
 
 @router.post("/", status_code=201)
-def place_order(order: schemas.OrderCreate, db: Session = Depends(database.get_db)):
-    new_order = models.Order(**order.dict())
+def place_order(
+    order: schemas.OrderCreate,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    new_order = models.Order(**order.dict(), user_id=current_user.id)
     db.add(new_order)
     db.commit()
     return {"message": "Order created", "id": new_order.id}

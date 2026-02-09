@@ -50,7 +50,10 @@ class GoodsPagination(BaseModel):
 
 class UserBase(BaseModel):
     email: EmailStr
-    full_name: Optional[str] = None
+    full_name: str
+    phone_number: Optional[str] = None
+    city: Optional[str] = None
+    nova_post_number: Optional[str] = None
 
 
 class UserCreate(UserBase):
@@ -65,6 +68,9 @@ class UserLogin(BaseModel):
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+    city: Optional[str] = None
+    nova_post_number: Optional[str] = None
 
 
 class UserOut(UserBase):
@@ -101,7 +107,7 @@ class FeedbackOut(FeedbackBase):
 class OrderItem(BaseModel):
     product_id: str
     quantity: int
-    price: float
+    price: Price
     size: str | None = None
 
 

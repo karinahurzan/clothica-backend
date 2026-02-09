@@ -7,6 +7,7 @@ from sqlalchemy import (
     JSON,
     Boolean,
     DateTime,
+    Enum as SAEnum,
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -14,6 +15,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import expression
 from .database import Base
 import datetime
+import enum
 
 
 class User(Base):
@@ -24,6 +26,9 @@ class User(Base):
     hashed_password = Column(String)
     full_name = Column(String)
     is_admin = Column(Boolean, default=False)
+    phone_number = Column(String)
+    city = Column(String)
+    nova_post_number = Column(String)
     orders = relationship("Order", back_populates="owner")
 
 
@@ -64,13 +69,20 @@ class Category(Base):
     name = Column(String)
 
 
+class StatusEnum(enum.Enum):
+    pending = "pending"
+    complacting = "complacting"
+    ready = "ready"
+    canceled = "canceled"
+
+
 class Order(Base):
     __tablename__ = "orders"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     items = Column(JSON)
     total_price = Column(Float)
-    status = Column(String, default="pending")
+    status = Column(SAEnum(StatusEnum, name="order_status"), default=StatusEnum.pending)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     owner = relationship("User", back_populates="orders")
 

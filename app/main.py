@@ -1,10 +1,26 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from app.routers import auth, users, goods, categories, orders, feedbacks, subscriptions
 from app.database import engine, Base
 
 Base.metadata.create_all(bind=engine)
+
+
+def _ensure_user_profile_columns() -> None:
+    """Ensure older database instances have the recent user profile columns."""
+    statements = (
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(255)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(255)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS nova_post_number VARCHAR(255)",
+    )
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+
+
+_ensure_user_profile_columns()
 
 app = FastAPI(
     title="Clothica API",

@@ -4,6 +4,11 @@ WORKDIR /app
 
 COPY requirements.txt .
 
+# Install system packages needed by psycopg2 before resolving Python deps
+RUN apt-get update && \
+    apt-get install -y build-essential libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, cast
+from sqlalchemy.dialects.postgresql import JSONB
 from typing import List, Optional
 from .. import models, schemas, database
 
@@ -49,7 +50,17 @@ def get_goods(
     if gender:
         query = query.filter(models.Good.gender == gender)
     if size:
-        query = query.filter(models.Good.size.contains(size))
+        size_values = [size] if isinstance(size, str) else [s for s in size if s]
+
+        if size_values:
+            dialect_name = db.bind.dialect.name if db.bind else None
+
+            if dialect_name == "postgresql":
+                query = query.filter(
+                    cast(models.Good.size, JSONB).contains(size_values)
+                )
+            else:
+                query = query.filter(models.Good.size.contains(size_values))
 
     max_price_in_db = (
         query.with_entities(func.max(models.Good.price_value)).scalar() or 1000
@@ -64,8 +75,6 @@ def get_goods(
     goods = (
         query.offset(skip).limit(limit).options(joinedload(models.Good.feedbacks)).all()
     )
-
-    print(goods)
 
     return {
         "items": [format_good(g) for g in goods],
